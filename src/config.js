@@ -1,0 +1,42 @@
+import * as THREE from 'three/webgpu';
+import region from '../region.json';
+
+export const ORIGIN = region.origin;
+const MX = Math.cos((ORIGIN.lat * Math.PI) / 180) * 111320;
+const MZ = 110574;
+
+// lat/lon -> local metres. x east, z south, so north is -z.
+export const ll = (lat, lon) => new THREE.Vector2((lon - ORIGIN.lon) * MX, -(lat - ORIGIN.lat) * MZ);
+
+// The box the plane may roam. Wider than the detailed map so the outlying airfields are reachable.
+const sw = ll(region.flight.s, region.flight.w), ne = ll(region.flight.n, region.flight.e);
+export const FLIGHT_BOX = { minX: sw.x, maxX: ne.x, minZ: ne.y, maxZ: sw.y };
+
+// Late golden hour, sun in the west-north-west over the bay.
+const SUN_AZIMUTH = THREE.MathUtils.degToRad(292);
+const SUN_ELEVATION = THREE.MathUtils.degToRad(19);
+export const SUN_DIR = new THREE.Vector3(
+  Math.sin(SUN_AZIMUTH) * Math.cos(SUN_ELEVATION),
+  Math.sin(SUN_ELEVATION),
+  -Math.cos(SUN_AZIMUTH) * Math.cos(SUN_ELEVATION)
+).normalize();
+
+export const COLORS = {
+  sun: new THREE.Color(1.0, 0.72, 0.46),
+  skyTop: new THREE.Color(0.2, 0.42, 0.78),
+  skyMid: new THREE.Color(0.55, 0.72, 0.9),
+  horizon: new THREE.Color(1.0, 0.78, 0.6),
+  haze: new THREE.Color(0.93, 0.74, 0.66),
+};
+
+export const FLIGHT = {
+  cruise: 58,
+  boost: 135,
+  minAlt: 9,
+  maxAlt: 950,
+  wheelsY: 3.4, // height of the plane's origin when its floats sit on the ground
+  liftOff: 44,
+  maxRoll: THREE.MathUtils.degToRad(62),
+  maxPitch: THREE.MathUtils.degToRad(32),
+  start: { lat: -37.8455, lon: 144.9735, alt: 150, heading: 0 },
+};

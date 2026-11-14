@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Melbourne Flyer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@500;700&family=DM+Serif+Display:ital@0;1&family=Patrick+Hand&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink: #2b2440; --paper: #f7efdc; --gold: #e9a92b; --red: #d9412e; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink); font-family: 'Patrick Hand', 'Comic Sans MS', cursive; }
+      html, body { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
+      canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }
+      #stick { position: fixed; width: 128px; height: 128px; margin: -64px 0 0 -64px; border-radius: 50%; border: 3px solid rgba(247, 239, 220, 0.85); background: rgba(43, 36, 64, 0.18); opacity: 0; transition: opacity 0.15s; pointer-events: none; z-index: 3; }
+      #stick.on { opacity: 1; }
+      #stick i { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink); transform: translate(-50%, -50%); }
+      #boost-btn { position: fixed; right: max(22px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); width: clamp(64px, 20vmin, 96px); height: clamp(64px, 20vmin, 96px); border-radius: 50%; border: 3px solid var(--ink); background: var(--red); color: var(--paper); font: inherit; font-size: clamp(14px, 4vmin, 20px); letter-spacing: 1px; box-shadow: 3px 4px 0 var(--ink); display: none; z-index: 4; touch-action: none; }
+      #boost-btn.on { transform: translate(2px, 3px) scale(0.96); box-shadow: 1px 1px 0 var(--ink); background: var(--gold); color: var(--ink); }
+      body.touch.playing #boost-btn { display: block; }
+      body.touch #keys, body.touch #fx { display: none; }
+      body.touch #guide { right: auto; left: 50%; transform: translateX(-50%); }
+      .how .touch-only { display: none; }
+      body.touch .how .touch-only { display: inline; }
+      body.touch .how .keys-only { display: none; }
+      #hud { position: fixed; inset: 0; pointer-events: none; transition: opacity 0.6s; }
+      #hud.hidden { opacity: 0; }
+      .card { position: absolute; background: rgba(247, 239, 220, 0.9); border: 2px solid var(--ink); border-radius: 14px 18px 12px 20px / 18px 12px 20px 14px; box-shadow: 3px 4px 0 rgba(43, 36, 64, 0.25); padding: 8px 16px; }
+      #place { top: 26px; left: 50%; transform: translateX(-50%) rotate(-1deg); text-align: center; min-width: 180px; }
+      #suburb { font-family: 'Caveat', cursive; font-weight: 700; font-size: 34px; line-height: 1; }
+      #heading { font-size: 16px; opacity: 0.75; letter-spacing: 1px; }
+      #gauges { left: 30px; bottom: 30px; transform: rotate(-1.5deg); display: flex; gap: 20px; align-items: flex-end; }
+      .gauge b { font-family: 'Caveat', cursive; font-size: 40px; line-height: 0.9; display: block; }
+      .gauge span { font-size: 14px; opacity: 0.7; letter-spacing: 1px; }
+      #boost { width: 90px; height: 10px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; margin-bottom: 7px; }
+      #boost i { display: block; height: 100%; width: 0; background: var(--red); }
+      #cards { right: 30px; top: 26px; transform: rotate(1.2deg); font-size: 17px; line-height: 1.35; }
+      #cards h3 { font-family: 'Caveat', cursive; font-size: 26px; margin: 0 0 2px; }
+      #cards li { list-style: none; opacity: 0.55; }
+      #cards li.got { opacity: 1; }
+      #cards li.got::before { content: '✓ '; color: var(--red); }
+      #cards li:not(.got)::before { content: '○ '; }
+      #cards ul { margin: 0; padding: 0; }
+      #guide { right: 30px; bottom: 30px; transform: rotate(-0.8deg); display: flex; align-items: center; gap: 12px; font-size: 18px; }
+      #arrow { width: 34px; height: 34px; transition: transform 0.15s linear; }
+      #toast { left: 50%; top: 22%; transform: translate(-50%, -20px) rotate(-2deg) scale(0.9); opacity: 0; transition: all 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); text-align: center; padding: 14px 30px; border-width: 3px; }
+      #toast.show { opacity: 1; transform: translate(-50%, 0) rotate(-2deg) scale(1); }
+      #toast b { font-family: 'Caveat', cursive; font-size: 44px; display: block; line-height: 1; }
+      #toast small { font-size: 19px; }
+      #notice { left: 50%; bottom: 150px; transform: translateX(-50%); font-size: 20px; opacity: 0; transition: opacity 0.4s; }
+      #notice.show { opacity: 1; }
+      #keys { left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 16px; white-space: nowrap; transition: opacity 1.5s; }
+      kbd { font-family: inherit; border: 1.5px solid var(--ink); border-radius: 6px; padding: 0 6px; background: #fff8e8; }
+      #fx { left: 30px; top: 26px; font-size: 15px; transform: rotate(-1deg); line-height: 1.4; }
+      #fx i { font-style: normal; opacity: 0.4; }
+      #fx i.on { opacity: 1; color: var(--red); }
+      #title { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; background: var(--paper); transition: opacity 1.2s, background 0.4s; z-index: 5; text-align: center; overflow: hidden; }
+      #title.gone { opacity: 0; pointer-events: none; }
+      .splash { display: none; }
+      #title[data-splash='a'] .splash-a, #title[data-splash='b'] .splash-b, #title[data-splash='c'] .splash-c { display: block; }
+      #status { font-size: 20px; min-height: 30px; }
+      .start { position: relative; z-index: 2; }
+      .start .how { margin-top: 18px; font-size: 17px; line-height: 1.9; opacity: 0.85; }
+      #go { pointer-events: auto; cursor: pointer; font: inherit; font-size: 26px; padding: 8px 34px; margin-top: 8px; background: var(--gold); color: var(--ink); border: 3px solid var(--ink); border-radius: 16px 22px 14px 24px / 22px 14px 24px 16px; box-shadow: 4px 5px 0 var(--ink); display: none; }
+      #go:hover { transform: translate(-1px, -2px) rotate(-1deg); }
+      .pick { margin-top: 14px; font-size: 14px; opacity: 0.8; letter-spacing: 1px; }
+      .pick button { font: inherit; margin-left: 6px; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid currentColor; background: transparent; color: inherit; cursor: pointer; }
+      #title[data-splash='a'] .pick [data-pick='a'], #title[data-splash='b'] .pick [data-pick='b'], #title[data-splash='c'] .pick [data-pick='c'] { background: var(--gold); color: var(--ink); }
+
+      /* A: brush script on paper */
+      #title[data-splash='a'] { background-image: radial-gradient(circle at 30% 20%, #ffe6b8 0, transparent 55%), radial-gradient(circle at 75% 80%, #f9c7a8 0, transparent 50%); }
+      .splash-a h1 { font-family: 'Caveat', cursive; font-size: clamp(64px, 11vw, 150px); margin: 0; line-height: 0.85; transform: rotate(-3deg); color: var(--red); text-shadow: 4px 5px 0 var(--ink); }
+      .splash-a h2 { font-family: 'Caveat', cursive; font-size: clamp(22px, 3vw, 36px); margin: 18px 0 0; font-weight: 500; }
+
+      /* B: travel poster */
+      #title[data-splash='b'] { background: linear-gradient(#1f6f78 0%, #e98a4b 62%, #f3b562 100%); color: #f7efdc; justify-content: flex-end; padding-bottom: 5vh; }
+      .poster { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .poster-text { position: relative; z-index: 1; }
+      .splash-b { position: static; }
+      .splash-b .kicker { font-family: 'Bebas Neue', sans-serif; letter-spacing: 6px; font-size: clamp(13px, 1.6vw, 20px); margin: 0 0 6px; color: #12333f; }
+      .splash-b h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(60px, 12vw, 170px); line-height: 0.82; margin: 0; letter-spacing: 3px; color: #f7efdc; text-shadow: 5px 5px 0 #12333f; }
+      .splash-b h1 span { color: #f6c453; }
+      .splash-b h2 { font-family: 'Patrick Hand', cursive; font-weight: 400; font-size: clamp(17px, 2.1vw, 26px); margin: 14px 0 0; color: #f7efdc; text-shadow: 1px 2px 0 #12333f; }
+      #title[data-splash='b'] kbd { color: var(--ink); }
+      #title[data-splash='b'] .start { text-shadow: 1px 1px 0 #12333f; }
+
+      /* C: boarding pass */
+      #title[data-splash='c'] { background: #23344a; background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 14px, transparent 14px 28px); color: #f7efdc; }
+      .pass { display: flex; width: 860px; margin: 0 auto; color: var(--ink); text-align: left; transform: rotate(-2deg); filter: drop-shadow(8px 12px 0 rgba(0, 0, 0, 0.3)); }
+      .pass-main { flex: 1; background: var(--paper); padding: 22px 30px; border-radius: 18px 0 0 18px; border-right: 3px dashed #23344a; }
+      .pass-stub { width: 120px; background: var(--gold); border-radius: 0 18px 18px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 2px; writing-mode: vertical-rl; }
+      .pass-stub b { font-size: 26px; letter-spacing: 3px; }
+      .pass .airline { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 3px; margin: 0 0 6px; color: var(--red); }
+      .pass h1 { font-family: 'DM Serif Display', serif; font-size: clamp(34px, 6vw, 68px); line-height: 0.95; margin: 0; }
+      .pass h1 i { color: var(--red); }
+      .pass h2 { font-family: 'Patrick Hand', cursive; font-weight: 400; font-size: clamp(16px, 2vw, 23px); margin: 8px 0 12px; }
+      .route { display: flex; align-items: center; gap: 16px; font-family: 'Space Mono', monospace; font-size: clamp(24px, 4vw, 44px); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); padding: 4px 0; }
+      .route span { flex: 1; text-align: center; color: var(--red); border-bottom: 2px dotted var(--ink); line-height: 0.6; }
+      .pass dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 0; font-family: 'Space Mono', monospace; }
+      .pass dt { font-size: 10px; letter-spacing: 2px; opacity: 0.6; text-transform: uppercase; }
+      .pass dd { margin: 0; font-size: 13px; font-weight: 700; }
+      #title[data-splash='c'] kbd { color: var(--ink); }
+      .credit { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.55; z-index: 6; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <div id="hud" class="hidden">
+      <div id="fx" class="card">
+        <kbd>1</kbd> <i id="fx-paint" class="on">paint</i> &nbsp;<kbd>2</kbd> <i id="fx-ink" class="on">ink</i><br />
+        <kbd>3</kbd> <i id="fx-gi" class="on">SSGI</i> &nbsp;<kbd>4</kbd> <i id="fx-ssr" class="on">SSR</i> &nbsp;<span id="fps"></span>
+      </div>
+      <div id="place" class="card"><div id="suburb">Melbourne</div><div id="heading">N · 000°</div></div>
+      <div id="cards" class="card"><h3>Postcards <span id="count">0/15</span></h3><ul id="list"></ul></div>
+      <div id="gauges" class="card">
+        <div class="gauge"><b id="speed">0</b><span>KM/H</span></div>
+        <div class="gauge"><b id="alt">0</b><span>METRES</span></div>
+        <div class="gauge"><div id="boost"><i></i></div><span>BOOST</span></div>
+      </div>
+      <div id="guide" class="card">
+        <svg id="arrow" viewBox="0 0 34 34"><path d="M17 3 L28 29 L17 23 L6 29 Z" fill="#e9a92b" stroke="#2b2440" stroke-width="2.4" stroke-linejoin="round" /></svg>
+        <div><div id="next">—</div><small id="dist"></small></div>
+      </div>
+      <div id="toast" class="card"><small>postcard collected</small><b id="toast-name"></b><small id="toast-hint"></small></div>
+      <div id="notice" class="card"></div>
+      <div id="keys" class="card">
+        <kbd>A</kbd><kbd>D</kbd> bank &nbsp; <kbd>W</kbd><kbd>S</kbd> nose down / up &nbsp; <kbd>Space</kbd> boost &nbsp; <kbd>C</kbd> camera &nbsp; airfields: land with <kbd>W</kbd>, roll with <kbd>Space</kbd> &nbsp; <kbd>I</kbd> invert &nbsp; <kbd>M</kbd> sound &nbsp; <kbd>H</kbd> hide
+      </div>
+    </div>
+    <div id="stick"><i></i></div>
+    <button id="boost-btn">BOOST</button>
+    <div id="title" data-splash="c">
+      <!-- Option A: brush script on paper -->
+      <section class="splash splash-a">
+        <h1>Melbourne<br />Flyer</h1>
+        <h2>a golden hour joyride over the inner suburbs</h2>
+      </section>
+
+      <!-- Option B: mid-century travel poster -->
+      <section class="splash splash-b">
+        <svg class="poster" viewBox="0 0 800 520" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <circle cx="400" cy="300" r="170" fill="#f6c453" />
+          <circle cx="400" cy="300" r="215" fill="none" stroke="#f6c453" stroke-opacity="0.35" stroke-width="18" />
+          <path d="M0 520V408h30v-40h26v40h22v-88h30v60h18v-120h34v150h20v-70h28v40h16v-170h14l8-30 8 30h14v200h24v-96h30v70h20v-140h36v110h18v-60h26v90h22v-190h32v160h20v-80h30v60h18v-130h34v150h22v-60h26v-50h30v110h24v-150h30v90h20v-40h28v84h30v112z" fill="#12333f" />
+          <g transform="translate(250 190) rotate(-8)" fill="#f7efdc">
+            <path d="M0 14c40-10 120-12 170-4l26-22h14l-12 24c14 3 22 8 22 12s-10 9-24 11c-60 6-150 2-196-9z" />
+            <path d="M60 4h110l-8 10H70z" fill="#d9412e" />
+            <path d="M52 34h90l-14 22H66z" />
+          </g>
+        </svg>
+        <div class="poster-text">
+          <p class="kicker">Fly the bay · est. golden hour</p>
+          <h1>Golden&nbsp;Hour <span>3000</span></h1>
+          <h2>A painted joyride over Melbourne, postcode by postcode</h2>
+        </div>
+      </section>
+
+      <!-- Option C: boarding pass -->
+      <section class="splash splash-c">
+        <div class="pass">
+          <div class="pass-main">
+            <p class="airline">TRAM LINES &amp; TAILWINDS · SCENIC AIR</p>
+            <h1>Tram Lines <i>&amp;</i> Tailwinds</h1>
+            <h2>Fly low. Land anywhere. Collect the city.</h2>
+            <div class="route"><b>SKD</b><span>✈</span><b>MEL</b></div>
+            <dl>
+              <div><dt>Passenger</dt><dd>You, obviously</dd></div>
+              <div><dt>Gate</dt><dd>St Kilda Pier</dd></div>
+              <div><dt>Departs</dt><dd>Golden hour</dd></div>
+              <div><dt>Seat</dt><dd>1A, the only one</dd></div>
+            </dl>
+          </div>
+          <div class="pass-stub"><span>ADMIT ONE</span><b>VH-CZY</b><span>FLOATPLANE</span></div>
+        </div>
+      </section>
+
+      <div class="start">
+        <div id="status">mixing paints…</div>
+        <button id="go">Take off</button>
+        <div class="how">
+          <span class="keys-only"><kbd>A</kbd> <kbd>D</kbd> bank &nbsp;·&nbsp; <kbd>W</kbd> nose down &nbsp;·&nbsp; <kbd>S</kbd> nose up &nbsp;·&nbsp; <kbd>Space</kbd> boost</span>
+          <span class="touch-only">drag anywhere to steer, like a joystick · hold BOOST to go faster</span><br />
+          let go and she levels herself out · hoops are postcards · any airfield is a place to land
+        </div>
+        <div class="pick">splash <button data-pick="a">A</button><button data-pick="b">B</button><button data-pick="c">C</button></div>
+      </div>
+      <div class="credit">Map data © OpenStreetMap contributors (ODbL) · Stork model from the three.js examples · three.js r187 WebGPU</div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
