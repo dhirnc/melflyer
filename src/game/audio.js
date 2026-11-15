@@ -36,8 +36,17 @@ export function createAudio() {
     noise.start();
   };
 
+  // Phones suspend audio when the tab is backgrounded, the screen locks or a call comes in, and do not
+  // bring it back on their own. Any touch or key resumes it.
+  const wake = () => { if (ctx && ctx.state !== 'running') ctx.resume(); };
+  for (const type of ['pointerdown', 'touchend', 'keydown']) addEventListener(type, wake, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+
   return {
-    start,
+    start() {
+      start();
+      wake();
+    },
     toggle() {
       muted = !muted;
       if (master) master.gain.value = muted ? 0 : 0.5;

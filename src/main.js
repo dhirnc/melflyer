@@ -27,8 +27,9 @@ async function boot() {
   };
   const renderer = new THREE.WebGPURenderer({ antialias: false, requiredLimits: { maxColorAttachmentBytesPerSample: 64 } });
   // Phones start at a modest resolution and are never allowed below it, so a busy moment costs frames, not sharpness.
-  const floor = LITE ? 1 : 0.85;
-  let ratio = Math.min(devicePixelRatio, LITE || innerWidth > 1500 ? 1.25 : 1.5);
+  // Big windows start at native-ish 1x: the brush filter hides the difference and the frame rate does not.
+  const floor = LITE ? 1 : 0.8;
+  let ratio = Math.min(devicePixelRatio, LITE ? 1.25 : innerWidth * innerHeight > 1.2e6 ? 1 : innerWidth * innerHeight > 6e5 ? 1.25 : 1.5);
   renderer.setPixelRatio(ratio);
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -188,7 +189,7 @@ async function boot() {
       // Trade resolution for frame rate rather than stutter. The paint filter hides the difference.
       // Resolution only ever steps down, and only after a sustained slow spell. Climbing back up was the cause
       // of constant stutter: it found a resolution the GPU could not hold, dropped, and climbed again.
-      slow = fps < 45 ? slow + 1 : 0;
+      slow = fps < (LITE ? 45 : 55) ? slow + 1 : 0;
       if (slow >= 3 && ratio > floor) { ratio = Math.max(floor, ratio - 0.15); renderer.setPixelRatio(ratio); slow = 0; }
     }
     hudTimer += dt;
@@ -203,6 +204,17 @@ async function boot() {
 
   status('warming up the engine…');
   await nextFrame();
+  // Draw everything once with culling off, so every mesh is uploaded and every shader built before take-off.
+  // Otherwise each new district costs a visible hitch the first time it comes into view.
+  const culled = [];
+  scene.traverse((o) => { if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o); } });
+  flight.apply(plane.root, 0);
+  chase.update(0.016, flight, 0, 0);
+  sky.follow(flight.pos);
+  await renderer.compileAsync(scene, camera);
+  fx.pipeline.render();
+  await nextFrame();
+  for (const o of culled) o.frustumCulled = true;
   renderer.setAnimationLoop(frame);
   hud.ready(() => {
     started = true;

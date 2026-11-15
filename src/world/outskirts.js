@@ -60,7 +60,7 @@ function instanced(geometry, material, spots, makeMatrix) {
       mesh.setMatrixAt(i, d.matrix);
     });
     mesh.computeBoundingSphere();
-    mesh.castShadow = !LITE;
+    mesh.castShadow = false; // tens of thousands of far-off instances; their shadows are never close enough to read
     mesh.receiveShadow = true;
     group.add(mesh);
   }
