@@ -18,6 +18,9 @@ import { buildPostcards } from './game/postcards.js';
 import { createHud, initSplash } from './game/hud.js';
 import { createAudio } from './game/audio.js';
 import { createTouch } from './game/touch.js';
+import { createStats } from './game/stats.js';
+
+const READY_AFTER_FRAMES = 6;
 
 // Yields so the status line can paint. The timeout covers a hidden tab, where animation frames never fire.
 const nextFrame = () => new Promise((r) => { requestAnimationFrame(r); setTimeout(r, 80); });
@@ -158,12 +161,23 @@ async function boot() {
     return '';
   };
 
+  const takeOff = () => {
+    started = true;
+    document.body.classList.add('playing');
+    hud.show();
+    audio.start();
+  };
   const clock = new THREE.Clock();
-  let t = 0, hudTimer = 0, frames = 0, fpsTimer = 0, fps = 60, slow = 0;
+  let t = 0, hudTimer = 0, frames = 0, fpsTimer = 0, fps = 60, slow = 0, drawn = 0;
+  const stats = createStats(() => `${started ? 'flying' : 'title'}  unprimed ${detail.pending}  ratio ${ratio.toFixed(2)}`);
   const shadowFocus = new THREE.Vector3();
 
   const frame = () => {
     const dt = Math.min(clock.getDelta(), 0.05);
+    stats();
+    // The first frames build every shader and can take seconds on a phone. Offering take-off before they are
+    // done gives a button that does not answer the tap.
+    if (++drawn === READY_AFTER_FRAMES) hud.ready(takeOff);
     t += dt;
     readInput();
     if (!dev.hold) flight.update(dt, input);
@@ -175,7 +189,7 @@ async function boot() {
 
     const light = daylight.update(dt);
     if (light.changed) sky.apply(light);
-    detail.update(camera.position);
+    detail.update(camera.position, dt);
     landmarks.update(dt);
     life.update(dt, t);
     coast.update(t);
@@ -213,6 +227,7 @@ async function boot() {
 
   if (import.meta.env.DEV) window.__mel = { dev, flight, daylight, detail, sky, airports, coast, life, ground, chase, fx, renderer, scene, camera, city, postcards, stats: { city: city.stats, trees: trees.stats, outskirts: outskirts.stats } };
 
+  status('warming up the engine…');
   renderer.setAnimationLoop(frame);
   // A hidden tab does no work at all: no simulation, no rendering, no sound.
   document.addEventListener('visibilitychange', () => {
@@ -224,12 +239,6 @@ async function boot() {
       clock.getDelta(); // discard the time spent hidden
       renderer.setAnimationLoop(frame);
     }
-  });
-  hud.ready(() => {
-    started = true;
-    document.body.classList.add('playing');
-    hud.show();
-    audio.start();
   });
 }
 

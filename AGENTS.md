@@ -7,7 +7,8 @@ the map of the source tree. This file holds what the code does not tell you.
 
 ```bash
 npm ci              # a fresh worktree has no node_modules
-npm run dev         # http://localhost:5173, strict port. Agents: start it through .claude/launch.json
+npm run dev         # http://localhost:5173, or $PORT. Agents: start it through .claude/launch.json, which
+                    # moves to a free port when another worktree holds 5173
 npm run build       # writes dist/. Run it before calling a change done; it is the only automated check
 npm run fetch-osm   # rebakes public/data/melbourne.json from region.json. Slow, hits public Overpass servers
 ```
@@ -24,7 +25,7 @@ Every visual change has to be checked on both.
 | Shadows | 4096 map, every frame | 2048 map, every second frame |
 | Scenery | everything | thinner trees and houses, shorter draw distance (`src/world/detail.js`) |
 
-Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`.
+Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`, `?stats`.
 
 ## Checking your work
 
@@ -34,6 +35,8 @@ Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`.
   phone cost.** Frame times on a desktop GPU are 1 to 3 ms and vary 3x run to run, so they say nothing about a phone.
   Reference at the start position on lite: about 1.1M triangles and 330 draws (was 2.0M and 430 before tree LOD).
 - Screenshots need the Browser pane visible and the app window uncovered, or they time out.
+- `?stats` puts frame rate, worst frame and a log of stalls on screen, each stamped with what the loader was
+  doing. Ask the owner for a screenshot of it from their phone rather than guessing at a phone problem.
 - A real phone is the only real test of smoothness. Cloudflare Pages builds a preview URL for every pushed branch.
 
 ## Rules the owner has set
@@ -52,7 +55,13 @@ Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`.
   level the GPU could not hold, dropped, and climbed again, which read as constant stutter and was first blamed
   on the time-of-day feature. Resolution now only steps down, after three slow seconds.
 - **A blocking warm-up.** Drawing the whole city unculled in one frame before take-off hung on "warming up the
-  engine" on some machines. `detail.js` now primes four meshes per frame behind the title screen instead.
+  engine" on some machines.
+- **Priming too hard.** Its replacement drew four unseen meshes a frame. The JavaScript cost was half a
+  millisecond, but the buffer uploads held a desktop at 37 fps for eight seconds, and on a phone made the
+  Take off button ignore taps and the first minutes of flight stutter. `detail.js` now primes one mesh, nearest
+  first, and only on the frame after one that took under 20 ms. Measure priming by frame rate, not by script time.
+- **Offering take-off too early.** The first few frames build every shader and take about three seconds on a
+  desktop. The button now appears after the sixth frame has drawn.
 - **Swapping the environment texture.** Assigning a different texture to `scene.environment` makes every lit
   material rebuild, a 200 ms stall on a desktop. Baking it (`PMREMGenerator.fromScene`) is only 2 ms. `daylight.js`
   asks for one rebuild, when a change of hour has settled. Rendering into the same target in place was tried and

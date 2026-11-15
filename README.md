@@ -37,6 +37,8 @@ houses. `?quality=full` or `?quality=lite` overrides the guess.
 
 **Time of day.** Starts at dusk and remembers the last pick. `?time=golden|dusk|night|noon` sets it for one visit.
 
+**Stats.** `?stats` shows frame rate and a log of stalls in the corner, for checking smoothness on a phone.
+
 **Splash screens.** Three designs ship, brush script (A) by default. Pick with the A / B / C dots on the title screen or `?splash=a|b|c`.
 
 ## Growing the map
@@ -70,7 +72,7 @@ mountain rings on the horizon. The airfields sit just past the map edge rather t
 - `src/world/daylight.js` is the table of times of day. Add a row and it joins the cycle. `sky.js` turns the
   current row into sky, fog, lights and reflections.
 - `src/world/detail.js` swaps distant tree tiles for a cheap stand-in, hides the furthest ones on phones, and
-  feeds unseen meshes to the GPU a few per frame behind the title screen.
+  feeds unseen meshes to the GPU one at a time on frames with time to spare.
 - `src/fx/pipeline.js` is the render graph. `src/fx/painterly.js` is the Kuwahara, ink and paper pass.
 - `src/plane/` holds the plane model, the flight model and the chase camera.
 
