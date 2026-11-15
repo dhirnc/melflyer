@@ -33,7 +33,7 @@ lifts the nose. A BOOST button appears bottom right. A mouse drag works the same
 **Phones.** Touch devices get a lite build automatically: no SSGI, SSR or TRAA, a cheaper brush filter, fewer
 trees and houses, smaller shadows. `?quality=full` or `?quality=lite` overrides the guess.
 
-**Splash screens.** Three designs ship, boarding pass by default. Pick with the A / B / C dots on the title screen or `?splash=a|b|c`.
+**Splash screens.** Three designs ship, brush script (A) by default. Pick with the A / B / C dots on the title screen or `?splash=a|b|c`.
 
 ## Growing the map
 
