@@ -18,9 +18,9 @@ export const ll = (lat, lon) => new THREE.Vector2((lon - ORIGIN.lon) * MX, -(lat
 const sw = ll(region.flight.s, region.flight.w), ne = ll(region.flight.n, region.flight.e);
 export const FLIGHT_BOX = { minX: sw.x, maxX: ne.x, minZ: ne.y, maxZ: sw.y };
 
-// Late golden hour, sun in the west-north-west over the bay.
-const SUN_AZIMUTH = THREE.MathUtils.degToRad(292);
-const SUN_ELEVATION = THREE.MathUtils.degToRad(19);
+// Early golden hour: the sun still fairly high in the west-north-west, so shadows are shorter and the light less orange.
+const SUN_AZIMUTH = THREE.MathUtils.degToRad(300);
+const SUN_ELEVATION = THREE.MathUtils.degToRad(29);
 export const SUN_DIR = new THREE.Vector3(
   Math.sin(SUN_AZIMUTH) * Math.cos(SUN_ELEVATION),
   Math.sin(SUN_ELEVATION),
@@ -28,11 +28,11 @@ export const SUN_DIR = new THREE.Vector3(
 ).normalize();
 
 export const COLORS = {
-  sun: new THREE.Color(1.0, 0.72, 0.46),
+  sun: new THREE.Color(1.0, 0.82, 0.6),
   skyTop: new THREE.Color(0.2, 0.42, 0.78),
   skyMid: new THREE.Color(0.55, 0.72, 0.9),
   horizon: new THREE.Color(1.0, 0.78, 0.6),
-  haze: new THREE.Color(0.93, 0.74, 0.66),
+  haze: new THREE.Color(0.92, 0.8, 0.72),
 };
 
 export const FLIGHT = {

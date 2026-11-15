@@ -4,7 +4,7 @@ import { LITE } from '../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TILE = 1100;
-const MAX_SCATTER = LITE ? 5000 : 12000;
+const MAX_SCATTER = LITE ? 9000 : 12000;
 
 export function treeGeometry() {
   const blob = (r, x, y, z) => {
@@ -20,7 +20,8 @@ export function treeGeometry() {
     return g;
   };
   const trunk = new THREE.CylinderGeometry(0.1, 0.17, 1.1, 5).translate(0, 0.55, 0).toNonIndexed();
-  const merged = mergeGeometries([trunk, blob(1, 0, 1.75, 0), blob(0.68, 0.55, 1.35, 0.3)]);
+  // Phones keep every tree but draw a single canopy blob each.
+  const merged = mergeGeometries(LITE ? [trunk, blob(1.08, 0, 1.7, 0)] : [trunk, blob(1, 0, 1.75, 0), blob(0.68, 0.55, 1.35, 0.3)]);
   merged.deleteAttribute('uv');
   return merged;
 }
@@ -55,8 +56,7 @@ function inRing(x, z, r) {
 
 export function buildTrees(data, heightAt) {
   const spots = [];
-  const stride = LITE ? 4 : 2; // every second mapped tree on phones
-  for (let i = 0; i < data.trees.length; i += stride) {
+  for (let i = 0; i < data.trees.length; i += 2) {
     const x = data.trees[i] / 10, z = data.trees[i + 1] / 10;
     if (heightAt(x, z) === 0) spots.push(x, z);
   }

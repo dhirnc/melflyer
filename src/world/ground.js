@@ -212,22 +212,27 @@ export function buildGround(data) {
   const shore = smoothstep(0.2, 0.5, waterMask).mul(smoothstep(0.82, 0.5, waterMask));
   const green = smoothstep(0.4, 0.5, land.g).mul(inside);
   const sand = smoothstep(0.35, 0.5, land.b).mul(inside);
-  const road = smoothstep(0.3, 0.48, lines.r).mul(inside);
+  const road = smoothstep(0.4, 0.56, lines.r).mul(inside);
+  // The soft outer edge of each painted road becomes a grass verge, so streets read as tree-lined.
+  const verge = smoothstep(0.1, 0.34, lines.r).mul(inside).mul(road.oneMinus());
   const rail = smoothstep(0.3, 0.5, lines.g).mul(inside);
   const pitch = smoothstep(0.4, 0.5, lines.b).mul(inside);
 
   const colorNode = Fn(() => {
-    const block = mix(vec3(0.86, 0.66, 0.46), vec3(0.95, 0.8, 0.56), blotch).mul(mix(0.9, 1.06, fine));
     const grassA = vec3(0.38, 0.6, 0.22);
     const grassB = vec3(0.62, 0.74, 0.28);
     const grass = mix(grassA, grassB, stroke).mul(mix(0.86, 1.08, fine));
+    // City blocks are a patchwork of warm paving and back gardens rather than one bare fill.
+    const paving = mix(vec3(0.84, 0.66, 0.5), vec3(0.93, 0.8, 0.6), blotch).mul(mix(0.9, 1.06, fine));
+    const gardens = smoothstep(0.42, 0.6, stroke.mul(0.55).add(fine.mul(0.45)));
+    const block = mix(paving, grass.mul(0.92), gardens.mul(0.75));
     const mown = mix(vec3(0.3, 0.62, 0.24), vec3(0.42, 0.72, 0.28), sin(wp.x.add(wp.y).mul(0.35)).mul(0.5).add(0.5));
-    const asphalt = mix(vec3(0.36, 0.33, 0.38), vec3(0.46, 0.42, 0.44), fine);
+    const asphalt = mix(vec3(0.3, 0.27, 0.35), vec3(0.4, 0.35, 0.4), fine);
     const sandCol = mix(vec3(0.96, 0.84, 0.6), vec3(0.9, 0.76, 0.52), fine);
     const deep = mix(vec3(0.05, 0.3, 0.42), vec3(0.08, 0.42, 0.5), stroke);
     const shallow = vec3(0.3, 0.68, 0.66);
     // Slow drifting bands of lighter paint so open water never reads as one flat fill.
-    const swell = mx_noise_float(vec3(wp.x.mul(0.006), wp.y.mul(0.022), time.mul(0.08))).mul(0.5).add(0.5);
+    const swell = LITE ? stroke : mx_noise_float(vec3(wp.x.mul(0.006), wp.y.mul(0.022), time.mul(0.08))).mul(0.5).add(0.5);
     const waterCol = mix(mix(deep, vec3(0.16, 0.5, 0.6), smoothstep(0.5, 0.85, swell).mul(0.55)), shallow, smoothstep(0.95, 0.5, waterMask));
 
     // Past the edge of the mapped area, a procedural carpet of streets, roofs and gardens.
@@ -239,13 +244,13 @@ export function buildGround(data) {
     const lotR2 = hash(lot.x.mul(39.3468).add(lot.y.mul(11.135)));
     const roofCol = mix(mix(vec3(0.74, 0.3, 0.17), vec3(0.42, 0.42, 0.47), step(0.62, lotR2)), vec3(0.86, 0.8, 0.68), step(0.86, lotR2));
     const lotCol = mix(grassA.mul(1.15), roofCol, step(0.42, lotR));
-    const parkland = smoothstep(0.25, 0.5, mx_noise_float(vec3(wp.mul(0.0009), 2.0)));
+    const parkland = LITE ? smoothstep(0.62, 0.8, blotch) : smoothstep(0.25, 0.5, mx_noise_float(vec3(wp.mul(0.0009), 2.0)));
     const blend = smoothstep(2200, 6500, length(cameraPosition.sub(positionWorld)));
     const suburb = mix(mix(mix(lotCol, asphalt, street), vec3(0.6, 0.47, 0.36), blend), grass, parkland);
     // Further out the streets give way to bush and paddocks, all the way to the ranges.
-    const bush = mix(vec3(0.2, 0.4, 0.2), vec3(0.42, 0.56, 0.24), mx_noise_float(vec3(wp.mul(0.0016), 8.0)).mul(0.5).add(0.5));
+    const bush = mix(vec3(0.2, 0.4, 0.2), vec3(0.42, 0.56, 0.24), LITE ? blotch : mx_noise_float(vec3(wp.mul(0.0016), 8.0)).mul(0.5).add(0.5));
     const paddock = mix(vec3(0.72, 0.68, 0.36), vec3(0.56, 0.66, 0.3), stroke);
-    const country = mix(bush, paddock, smoothstep(0.2, 0.45, mx_noise_float(vec3(wp.mul(0.0007), 12.0)))).mul(mix(0.9, 1.06, fine));
+    const country = mix(bush, paddock, LITE ? smoothstep(0.55, 0.75, stroke) : smoothstep(0.2, 0.45, mx_noise_float(vec3(wp.mul(0.0007), 12.0)))).mul(mix(0.9, 1.06, fine));
     const carpet = mix(suburb, country, smoothstep(2400, 5200, edgeM.x.min(edgeM.y).negate()));
 
     const c = mix(carpet, block, inside).toVar();
@@ -254,8 +259,9 @@ export function buildGround(data) {
     c.assign(mix(c, sandCol, sand));
     c.assign(mix(c, waterCol, water));
     c.assign(mix(c, vec3(0.5, 0.4, 0.36), rail.mul(0.85)));
+    c.assign(mix(c, grass.mul(0.9), verge.mul(water.oneMinus()).mul(0.7)));
     c.assign(mix(c, asphalt, road));
-    const foam = shore.mul(smoothstep(0.35, 0.7, mx_noise_float(vec3(wp.mul(0.05), time.mul(0.25))).mul(0.5).add(0.5).add(shore.mul(0.3))));
+    const foam = LITE ? shore.mul(smoothstep(0.35, 0.7, fine.add(shore.mul(0.3)))) : shore.mul(smoothstep(0.35, 0.7, mx_noise_float(vec3(wp.mul(0.05), time.mul(0.25))).mul(0.5).add(0.5).add(shore.mul(0.3))));
     c.assign(mix(c, vec3(0.97, 0.98, 0.95), foam.mul(road.oneMinus()).mul(0.85)));
     return c;
   })();

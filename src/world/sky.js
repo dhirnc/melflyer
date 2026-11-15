@@ -12,7 +12,7 @@ const v3 = (c) => vec3(c.r, c.g, c.b);
 const horizonColor = Fn(([dir]) => {
   const flat = normalize(vec3(dir.x, 0.0, dir.z));
   const toward = max(dot(flat, normalize(vec3(sunDir.x, 0.0, sunDir.z))), 0);
-  return mix(v3(COLORS.haze), vec3(1.0, 0.72, 0.42), pow(toward, 3).mul(0.85));
+  return mix(v3(COLORS.haze), vec3(1.0, 0.8, 0.54), pow(toward, 3).mul(0.8));
 });
 
 const skyColor = Fn(([dir, withSun]) => {
@@ -59,7 +59,7 @@ export function buildSky(scene, renderer) {
   scene.environmentIntensity = 0.5;
   pmrem.dispose();
 
-  const sun = new THREE.DirectionalLight(COLORS.sun, 6.4);
+  const sun = new THREE.DirectionalLight(COLORS.sun, 5.6);
   sun.castShadow = true;
   const mapSize = LITE ? 2048 : 4096;
   sun.shadow.mapSize.set(mapSize, mapSize);
@@ -72,7 +72,7 @@ export function buildSky(scene, renderer) {
   sun.shadow.radius = 2.5;
   scene.add(sun, sun.target);
 
-  const hemi = new THREE.HemisphereLight(new THREE.Color(0.62, 0.66, 0.98), new THREE.Color(0.8, 0.55, 0.42), 0.6);
+  const hemi = new THREE.HemisphereLight(new THREE.Color(0.62, 0.7, 1.0), new THREE.Color(0.78, 0.6, 0.46), 0.7);
   scene.add(hemi);
 
   // Keep the shadow box centred ahead of the plane, snapped to texels so it does not crawl.

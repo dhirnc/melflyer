@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import {
   Fn, attribute, uv, vec2, vec3, float, mix, step, fract, floor, hash, smoothstep, positionWorld, cameraPosition, length, mx_noise_float,
 } from 'three/tsl';
+import { LITE } from '../config.js';
 
 const TILE = 800;
 const CELL = 8;
@@ -370,7 +371,7 @@ export function buildCity(data, exclusions) {
     } else {
       const simple = holes.length === 0 && bd[1] !== 6;
       const crown = style.type === GLASS && top > 70 && simple && area > 500;
-      const parapet = !crown && simple && top > 13 && area > 220 && style.type === WALL;
+      const parapet = !LITE && !crown && simple && top > 13 && area > 220 && style.type === WALL;
       const bodyTop = crown ? top * 0.9 : top;
       const lip = parapet ? 1.1 : 0;
       walls(t, ring, base, bodyTop + lip, style.wall, style.type, sign, uOffset);
@@ -390,7 +391,7 @@ export function buildCity(data, exclusions) {
           const mast = square(cx, cz, 1.1);
           walls(t, mast, top, top + 16 + r() * 30, MAST, TRIM, signedArea(mast) > 0 ? 1 : -1, 0);
         }
-      } else if (top > 22 && area > 300 && simple && r() < 0.7) {
+      } else if (!LITE && top > 22 && area > 300 && simple && r() < 0.7) {
         const plant = scaled(ring, cx + (r() - 0.5) * 4, cz + (r() - 0.5) * 4, 0.36);
         walls(t, plant, top, top + 3.4, style.roof, TRIM, sign, 0);
         cap(t, plant, [], faces, top + 3.4, style.roof, ROOF);

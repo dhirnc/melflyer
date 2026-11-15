@@ -27,8 +27,8 @@ async function boot() {
   };
   const renderer = new THREE.WebGPURenderer({ antialias: false, requiredLimits: { maxColorAttachmentBytesPerSample: 64 } });
   // Phones start at a modest resolution and are never allowed below it, so a busy moment costs frames, not sharpness.
-  const floor = LITE ? Math.min(devicePixelRatio, 1.25) : 0.85;
-  let ratio = LITE ? floor : Math.min(devicePixelRatio, innerWidth > 1500 ? 1.25 : 1.5);
+  const floor = LITE ? 1 : 0.85;
+  let ratio = Math.min(devicePixelRatio, LITE || innerWidth > 1500 ? 1.25 : 1.5);
   renderer.setPixelRatio(ratio);
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -150,7 +150,7 @@ async function boot() {
   };
 
   const clock = new THREE.Clock();
-  let t = 0, hudTimer = 0, frames = 0, fpsTimer = 0, fps = 60, slow = 0, fast = 0;
+  let t = 0, hudTimer = 0, frames = 0, fpsTimer = 0, fps = 60, slow = 0;
   const shadowFocus = new THREE.Vector3();
 
   const frame = () => {
@@ -186,11 +186,10 @@ async function boot() {
       frames = 0;
       fpsTimer = 0;
       // Trade resolution for frame rate rather than stutter. The paint filter hides the difference.
-      slow = fps < 34 ? slow + 1 : 0;
-      fast = fps > 57 ? fast + 1 : 0;
-      const cap = Math.min(devicePixelRatio, LITE ? 1.75 : 2);
-      if (slow >= 3 && ratio > floor) { ratio = Math.max(floor, ratio - 0.1); renderer.setPixelRatio(ratio); slow = 0; }
-      if (fast >= 8 && ratio < cap) { ratio = Math.min(cap, ratio + 0.1); renderer.setPixelRatio(ratio); fast = 0; }
+      // Resolution only ever steps down, and only after a sustained slow spell. Climbing back up was the cause
+      // of constant stutter: it found a resolution the GPU could not hold, dropped, and climbed again.
+      slow = fps < 45 ? slow + 1 : 0;
+      if (slow >= 3 && ratio > floor) { ratio = Math.max(floor, ratio - 0.15); renderer.setPixelRatio(ratio); slow = 0; }
     }
     hudTimer += dt;
     if (hudTimer > 0.1) {
