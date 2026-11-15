@@ -5,7 +5,6 @@ import { buildCity } from './world/buildings.js';
 import { buildLandmarks } from './world/landmarks.js';
 import { buildTrees } from './world/trees.js';
 import { buildSky } from './world/sky.js';
-import { createDaylight } from './world/daylight.js';
 import { buildLife } from './world/life.js';
 import { buildAirports } from './world/airports.js';
 import { buildCoast } from './world/coast.js';
@@ -35,6 +34,7 @@ async function boot() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.0;
   document.body.prepend(renderer.domElement);
   await renderer.init();
 
@@ -45,7 +45,6 @@ async function boot() {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 2, 26000);
 
-  const daylight = createDaylight();
   const sky = buildSky(scene, renderer);
   status('painting the Yarra…');
   await nextFrame();
@@ -99,7 +98,6 @@ async function boot() {
     if (e.code === 'KeyM') audio.toggle();
     if (e.code === 'KeyH') hud.toggle();
     if (e.code === 'KeyI') invert = !invert;
-    if (e.code === 'KeyT') nextTime();
     const name = fxKeys[e.code];
     if (name) {
       const u = fx.toggles[name];
@@ -107,11 +105,6 @@ async function boot() {
       hud.fx(name, !!u.value);
     }
   });
-  const timeButton = document.getElementById('time');
-  const showTime = (t) => { timeButton.firstElementChild.textContent = t.icon; timeButton.lastElementChild.textContent = t.name; };
-  const nextTime = () => showTime(daylight.next());
-  showTime(daylight.current);
-  timeButton.addEventListener('click', nextTime);
   addEventListener('keyup', (e) => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
   const fit = () => {
@@ -171,8 +164,6 @@ async function boot() {
     plane.animate(dt, input, boostK);
     chase.update(dt, flight, boostK, t);
 
-    const light = daylight.update(dt);
-    if (light.changed) sky.apply(light);
     landmarks.update(dt);
     life.update(dt, t);
     coast.update(t);
