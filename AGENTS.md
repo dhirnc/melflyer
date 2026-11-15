@@ -34,7 +34,7 @@ Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`.
   phone cost.** Frame times on a desktop GPU are 1 to 3 ms and vary 3x run to run, so they say nothing about a phone.
   Reference at the start position on lite: about 1.1M triangles and 330 draws (was 2.0M and 430 before tree LOD).
 - Screenshots need the Browser pane visible and the app window uncovered, or they time out.
-- A real phone is the only real test of smoothness. Cloudflare Pages gives every pull request a preview URL.
+- A real phone is the only real test of smoothness. Cloudflare builds a preview URL for every pushed branch.
 
 ## Rules the owner has set
 
