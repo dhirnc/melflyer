@@ -47,6 +47,9 @@ export function createAudio() {
       start();
       wake();
     },
+    sleep() {
+      if (ctx && ctx.state === 'running') ctx.suspend();
+    },
     toggle() {
       muted = !muted;
       if (master) master.gain.value = muted ? 0 : 0.5;

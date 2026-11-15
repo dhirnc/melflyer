@@ -27,9 +27,8 @@ async function boot() {
   };
   const renderer = new THREE.WebGPURenderer({ antialias: false, requiredLimits: { maxColorAttachmentBytesPerSample: 64 } });
   // Phones start at a modest resolution and are never allowed below it, so a busy moment costs frames, not sharpness.
-  // Big windows start at native-ish 1x: the brush filter hides the difference and the frame rate does not.
-  const floor = LITE ? 1 : 0.8;
-  let ratio = Math.min(devicePixelRatio, LITE ? 1.25 : innerWidth * innerHeight > 1.2e6 ? 1 : innerWidth * innerHeight > 6e5 ? 1.25 : 1.5);
+  const floor = LITE ? 1 : 0.85;
+  let ratio = Math.min(devicePixelRatio, LITE || innerWidth > 1500 ? 1.25 : 1.5);
   renderer.setPixelRatio(ratio);
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -189,7 +188,7 @@ async function boot() {
       // Trade resolution for frame rate rather than stutter. The paint filter hides the difference.
       // Resolution only ever steps down, and only after a sustained slow spell. Climbing back up was the cause
       // of constant stutter: it found a resolution the GPU could not hold, dropped, and climbed again.
-      slow = fps < (LITE ? 45 : 55) ? slow + 1 : 0;
+      slow = fps < 45 ? slow + 1 : 0;
       if (slow >= 3 && ratio > floor) { ratio = Math.max(floor, ratio - 0.15); renderer.setPixelRatio(ratio); slow = 0; }
     }
     hudTimer += dt;
@@ -216,6 +215,17 @@ async function boot() {
   await nextFrame();
   for (const o of culled) o.frustumCulled = true;
   renderer.setAnimationLoop(frame);
+  // A hidden tab does no work at all: no simulation, no rendering, no sound.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      renderer.setAnimationLoop(null);
+      audio.sleep();
+      keys.clear();
+    } else {
+      clock.getDelta(); // discard the time spent hidden
+      renderer.setAnimationLoop(frame);
+    }
+  });
   hud.ready(() => {
     started = true;
     document.body.classList.add('playing');
