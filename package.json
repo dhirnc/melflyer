@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "vite --port 5173 --strictPort",
+    "dev": "vite --port ${PORT:-5173} --strictPort",
     "build": "vite build",
     "preview": "vite preview",
     "fetch-osm": "node tools/fetch-osm.mjs"
