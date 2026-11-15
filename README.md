@@ -18,6 +18,7 @@ Open http://localhost:5173 in a WebGPU browser (Chrome, Edge, Safari 26+).
 | `W` / `S` | nose down / nose up (`I` inverts) |
 | `Space` | boost in the air, throttle on the ground |
 | `C` | chase / orbit camera |
+| `T` | time of day: golden hour, midday, dusk, night (also the button top left) |
 | `1` `2` `3` `4` | toggle paint, ink, SSGI, SSR |
 | `M` `H` | sound, hide HUD |
 
@@ -63,6 +64,7 @@ mountain rings on the horizon. The airfields sit just past the map edge rather t
 - `src/world/landmarks.js` holds the hand-modelled landmarks and the postcard list. `airports.js` and `coast.js`
   hold the airfields and the St Kilda kite surfers. `life.js` runs trams, trains,
   balloons, boats, clouds and birds.
+- `src/world/daylight.js` is the table of times of day. Add a row and it joins the cycle.
 - `src/fx/pipeline.js` is the render graph. `src/fx/painterly.js` is the Kuwahara, ink and paper pass.
 - `src/plane/` holds the plane model, the flight model and the chase camera.
 

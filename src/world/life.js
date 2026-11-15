@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ll } from '../config.js';
 import { paint, add } from './paint.js';
+import { day } from './daylight.js';
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -17,7 +18,7 @@ function clouds(center) {
   // Lit by the sun on top, lavender underneath, with a little glow so they never go muddy.
   const up = smoothstep(-0.6, 0.9, normalWorld.y);
   m.colorNode = mix(vec3(0.8, 0.72, 0.9), vec3(1.0, 0.97, 0.92), up);
-  m.emissiveNode = mix(vec3(0.3, 0.24, 0.42), vec3(0.5, 0.38, 0.3), up).mul(0.55);
+  m.emissiveNode = mix(vec3(0.3, 0.24, 0.42), vec3(0.5, 0.38, 0.3), up).mul(0.55).mul(day.ambient);
   const puff = new THREE.IcosahedronGeometry(1, 2);
   const drift = [];
   for (let i = 0; i < 34; i++) {

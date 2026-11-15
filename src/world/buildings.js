@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import {
   Fn, attribute, uv, vec2, vec3, float, mix, step, fract, floor, hash, smoothstep, positionWorld, cameraPosition, length, mx_noise_float,
 } from 'three/tsl';
+import { day } from './daylight.js';
 
 const TILE = 800;
 const CELL = 8;
@@ -155,7 +156,8 @@ function cityMaterial() {
   const shopR = hash(shopId.mul(3.17));
   const shop = tall.mul(step(0.35, v)).mul(step(v, 3.0)).mul(step(0.07, fract(shopU))).mul(step(fract(shopU), 0.93));
   const awning = tall.mul(step(3.0, v)).mul(step(v, 3.9));
-  const litM = step(0.9, randM).mul(win).add(step(0.4, shopR).mul(shop).mul(0.7));
+  // More windows light up as it gets dark.
+  const litM = step(mix(float(0.9), float(0.7), day.night), randM).mul(win).add(step(0.4, shopR).mul(shop).mul(0.7));
 
   // Curtain wall: mullions, a spandrel band at every floor, the odd fin, a stone podium and a bright crown.
   const cg = vec2(u.div(1.7), v.div(3.9));
@@ -167,7 +169,7 @@ function cityMaterial() {
   const fin = step(idg.x.mod(6), 0.5).mul(step(fg.x, 0.24));
   const podium = step(v, 7.5);
   const crown = step(below, 4.5);
-  const litG = step(0.955, randG).mul(spandrel.oneMinus()).mul(podium.oneMinus()).mul(0.5);
+  const litG = step(mix(float(0.955), float(0.8), day.night), randG).mul(spandrel.oneMinus()).mul(podium.oneMinus()).mul(0.5);
 
   // Flat roofs: air handlers and the occasional skylight.
   const fr = fract(positionWorld.xz.div(7.5));
@@ -219,7 +221,7 @@ function cityMaterial() {
     .add(isFlat.add(isPitched).mul(0.88))
     .add(isTrim.mul(0.7));
   material.metalnessNode = isGlass.mul(mix(float(0.62), float(0.25), spandrel.max(podium)));
-  material.emissiveNode = vec3(1.0, 0.7, 0.36).mul(litM.mul(isMasonry).add(litG.mul(isGlass))).mul(mix(0.5, 1.3, detail));
+  material.emissiveNode = vec3(1.0, 0.7, 0.36).mul(litM.mul(isMasonry).add(litG.mul(isGlass))).mul(mix(0.5, 1.3, detail)).mul(day.windows);
   return material;
 }
 

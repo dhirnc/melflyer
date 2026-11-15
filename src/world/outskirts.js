@@ -1,7 +1,8 @@
 import * as THREE from 'three/webgpu';
-import { Fn, vec3, mix, hash, instanceIndex, positionLocal, positionWorld, normalWorld, step, smoothstep, dot, uniform, mx_noise_float } from 'three/tsl';
+import { Fn, vec3, mix, hash, instanceIndex, positionLocal, positionWorld, normalWorld, step, smoothstep, dot, mx_noise_float } from 'three/tsl';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SUN_DIR, COLORS, FLIGHT_BOX, LITE } from '../config.js';
+import { FLIGHT_BOX, LITE } from '../config.js';
+import { day } from './daylight.js';
 import { treeGeometry, treeMaterial } from './trees.js';
 
 const LOT = 26;
@@ -128,8 +129,8 @@ function woodland(bounds, blocked) {
 // as blue silhouettes at any distance.
 function mountains() {
   const group = new THREE.Group();
-  const sun = uniform(SUN_DIR);
-  const haze = vec3(COLORS.haze.r, COLORS.haze.g, COLORS.haze.b);
+  const sun = day.sunDir;
+  const haze = day.haze;
   const ring = (radius, height, seed, tint, hazeAmount) => {
     const N = 220;
     const ridge = (a) => 0.42 + 0.3 * Math.sin(a * 3 + seed) + 0.18 * Math.sin(a * 7.3 + seed * 2.1) + 0.1 * Math.sin(a * 17.1 + seed * 0.7);
@@ -157,7 +158,7 @@ function mountains() {
     const rock = mix(tint.mul(0.62), tint.mul(1.25).add(vec3(0.1, 0.06, 0.0)), smoothstep(0.1, 0.8, light));
     const brush = mix(0.92, 1.08, mx_noise_float(positionWorld.mul(0.0012)).mul(0.5).add(0.5));
     const low = smoothstep(height * 0.45, 0, positionWorld.y);
-    m.colorNode = mix(rock.mul(brush), haze, low.mul(0.5).add(hazeAmount).clamp(0, 1));
+    m.colorNode = mix(rock.mul(brush).mul(day.ambient.min(1)), haze, low.mul(0.5).add(hazeAmount).clamp(0, 1));
     const mesh = new THREE.Mesh(geo, m);
     mesh.frustumCulled = false;
     group.add(mesh);
