@@ -205,14 +205,19 @@ async function boot() {
   await nextFrame();
   // Draw everything once with culling off, so every mesh is uploaded and every shader built before take-off.
   // Otherwise each new district costs a visible hitch the first time it comes into view.
+  // Phones skip it: drawing the entire city unculled in one frame is more than a mobile GPU should be asked for.
   const culled = [];
-  scene.traverse((o) => { if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o); } });
-  flight.apply(plane.root, 0);
-  chase.update(0.016, flight, 0, 0);
-  sky.follow(flight.pos);
-  await renderer.compileAsync(scene, camera);
-  fx.pipeline.render();
-  await nextFrame();
+  if (!LITE) scene.traverse((o) => { if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o); } });
+  if (!LITE) try {
+    flight.apply(plane.root, 0);
+    chase.update(0.016, flight, 0, 0);
+    sky.follow(flight.pos);
+    fx.pipeline.render();
+    await nextFrame();
+  } catch (err) {
+    // The warm-up is an optimisation. If it fails, start anyway and let things load as they appear.
+    console.warn('warm-up skipped', err);
+  }
   for (const o of culled) o.frustumCulled = true;
   renderer.setAnimationLoop(frame);
   // A hidden tab does no work at all: no simulation, no rendering, no sound.
