@@ -51,6 +51,9 @@
       #keys { left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 16px; white-space: nowrap; transition: opacity 1.5s; }
       kbd { font-family: inherit; border: 1.5px solid var(--ink); border-radius: 6px; padding: 0 6px; background: #fff8e8; }
       #fx { left: 30px; top: 26px; font-size: 15px; transform: rotate(-1deg); line-height: 1.4; }
+      #time { left: 30px; top: 104px; transform: rotate(1deg); font: inherit; font-size: 17px; color: var(--ink); pointer-events: auto; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+      #time:active { transform: translate(1px, 2px); }
+      body.touch #time { top: 26px; }
       #fx i { font-style: normal; opacity: 0.4; }
       #fx i.on { opacity: 1; color: var(--red); }
       #title { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; background: var(--paper); transition: opacity 1.2s, background 0.4s; z-index: 5; text-align: center; overflow: hidden; }
@@ -108,6 +111,7 @@
         <kbd>1</kbd> <i id="fx-paint" class="on">paint</i> &nbsp;<kbd>2</kbd> <i id="fx-ink" class="on">ink</i><br />
         <kbd>3</kbd> <i id="fx-gi" class="on">SSGI</i> &nbsp;<kbd>4</kbd> <i id="fx-ssr" class="on">SSR</i> &nbsp;<span id="fps"></span>
       </div>
+      <button id="time" class="card" title="Change the time of day (T)"><span></span><span></span></button>
       <div id="place" class="card"><div id="suburb">Melbourne</div><div id="heading">N · 000°</div></div>
       <div id="cards" class="card"><h3>Postcards <span id="count">0/15</span></h3><ul id="list"></ul></div>
       <div id="gauges" class="card">
@@ -122,7 +126,7 @@
       <div id="toast" class="card"><small>postcard collected</small><b id="toast-name"></b><small id="toast-hint"></small></div>
       <div id="notice" class="card"></div>
       <div id="keys" class="card">
-        <kbd>A</kbd><kbd>D</kbd> bank &nbsp; <kbd>W</kbd><kbd>S</kbd> nose down / up &nbsp; <kbd>Space</kbd> boost &nbsp; <kbd>C</kbd> camera &nbsp; airfields: land with <kbd>W</kbd>, roll with <kbd>Space</kbd> &nbsp; <kbd>I</kbd> invert &nbsp; <kbd>M</kbd> sound &nbsp; <kbd>H</kbd> hide
+        <kbd>A</kbd><kbd>D</kbd> bank &nbsp; <kbd>W</kbd><kbd>S</kbd> nose down / up &nbsp; <kbd>Space</kbd> boost &nbsp; <kbd>C</kbd> camera &nbsp; <kbd>T</kbd> time of day &nbsp; airfields: land with <kbd>W</kbd>, roll with <kbd>Space</kbd> &nbsp; <kbd>I</kbd> invert &nbsp; <kbd>M</kbd> sound &nbsp; <kbd>H</kbd> hide
       </div>
     </div>
     <div id="stick"><i></i></div>

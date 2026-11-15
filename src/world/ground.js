@@ -1,10 +1,11 @@
 import * as THREE from 'three/webgpu';
 import {
   Fn, texture, positionWorld, vec2, vec3, float, mix, smoothstep, time, mx_noise_float, sin, normalize, transformNormalToView,
-  cameraPosition, length, max, fract, floor, hash, step,
+  cameraPosition, length, max, fract, floor, hash, step, dot, pow,
 } from 'three/tsl';
 
 import { LITE } from '../config.js';
+import { day } from './daylight.js';
 
 const ROAD_WIDTH = [26, 17, 12, 8, 7];
 const LINES_PX_PER_M = 4096 / 11000;
@@ -233,7 +234,11 @@ export function buildGround(data) {
     const shallow = vec3(0.3, 0.68, 0.66);
     // Slow drifting bands of lighter paint so open water never reads as one flat fill.
     const swell = LITE ? stroke : mx_noise_float(vec3(wp.x.mul(0.006), wp.y.mul(0.022), time.mul(0.08))).mul(0.5).add(0.5);
-    const waterCol = mix(mix(deep, vec3(0.16, 0.5, 0.6), smoothstep(0.5, 0.85, swell).mul(0.55)), shallow, smoothstep(0.95, 0.5, waterMask));
+    const paintedWater = mix(mix(deep, vec3(0.16, 0.5, 0.6), smoothstep(0.5, 0.85, swell).mul(0.55)), shallow, smoothstep(0.95, 0.5, waterMask));
+    // The bay takes on the sky: a wash of its colour everywhere, and a bright path on the water toward the sun.
+    const away = normalize(wp.sub(cameraPosition.xz));
+    const glitter = pow(max(dot(away, normalize(day.sunDir.xz)), 0), 6);
+    const waterCol = mix(paintedWater, day.water, day.sheen.mul(glitter.mul(0.9).add(0.45)).mul(mix(0.6, 1.0, swell)));
 
     // Past the edge of the mapped area, a procedural carpet of streets, roofs and gardens.
     const q = vec2(wp.x.mul(0.94).sub(wp.y.mul(0.34)), wp.x.mul(0.34).add(wp.y.mul(0.94)));

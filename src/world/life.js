@@ -1,9 +1,10 @@
 import * as THREE from 'three/webgpu';
-import { Fn, vec3, mix, hash, instanceIndex, positionLocal, normalWorld, time, sin, atan, floor, color, smoothstep, attribute } from 'three/tsl';
+import { Fn, vec3, mix, hash, instanceIndex, positionLocal, normalWorld, time, sin, atan, floor, color, smoothstep, attribute, dot, max } from 'three/tsl';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ll } from '../config.js';
 import { paint, add } from './paint.js';
+import { day } from './daylight.js';
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -14,10 +15,13 @@ function clouds(center) {
   const group = new THREE.Group();
   const rand = rng(42);
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 1 });
-  // Lit by the sun on top, lavender underneath, with a little glow so they never go muddy.
+  // Shade colour underneath, the sky's lit colour on top and on the side facing the sun, with a little glow
+  // so they never go muddy. At dusk that puts pink on the flank of every puff.
   const up = smoothstep(-0.6, 0.9, normalWorld.y);
-  m.colorNode = mix(vec3(0.8, 0.72, 0.9), vec3(1.0, 0.97, 0.92), up);
-  m.emissiveNode = mix(vec3(0.3, 0.24, 0.42), vec3(0.5, 0.38, 0.3), up).mul(0.55);
+  const facing = smoothstep(-0.2, 0.9, dot(normalWorld, day.sunDir));
+  const tint = mix(day.cloudShade, mix(day.cloudLit, vec3(1.0, 0.97, 0.92), up.mul(0.6)), max(up.mul(0.7), facing));
+  m.colorNode = tint;
+  m.emissiveNode = tint.mul(0.42).mul(day.ambient);
   const puff = new THREE.IcosahedronGeometry(1, 2);
   const drift = [];
   for (let i = 0; i < 34; i++) {

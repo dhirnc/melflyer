@@ -1,0 +1,8 @@
+# Cloudflare Pages response headers. Vite fingerprints everything under /assets, so it can be cached forever.
+# The map bake and models keep their names between deploys, so they are revalidated.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/data/*
+  Cache-Control: public, max-age=3600, must-revalidate
+/models/*
+  Cache-Control: public, max-age=86400

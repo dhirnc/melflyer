@@ -5,6 +5,8 @@ import { buildCity } from './world/buildings.js';
 import { buildLandmarks } from './world/landmarks.js';
 import { buildTrees } from './world/trees.js';
 import { buildSky } from './world/sky.js';
+import { createDaylight } from './world/daylight.js';
+import { createDetail } from './world/detail.js';
 import { buildLife } from './world/life.js';
 import { buildAirports } from './world/airports.js';
 import { buildCoast } from './world/coast.js';
@@ -34,7 +36,6 @@ async function boot() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = 1.0;
   document.body.prepend(renderer.domElement);
   await renderer.init();
 
@@ -45,6 +46,7 @@ async function boot() {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 2, 26000);
 
+  const daylight = createDaylight();
   const sky = buildSky(scene, renderer);
   status('painting the Yarra…');
   await nextFrame();
@@ -77,6 +79,7 @@ async function boot() {
 
   const plane = buildPlane();
   scene.add(plane.root);
+  const detail = createDetail(scene);
 
   const flight = new Flight(heightAt, FLIGHT_BOX, airports.fields);
   const chase = new ChaseCamera(camera, heightAt);
@@ -98,6 +101,7 @@ async function boot() {
     if (e.code === 'KeyM') audio.toggle();
     if (e.code === 'KeyH') hud.toggle();
     if (e.code === 'KeyI') invert = !invert;
+    if (e.code === 'KeyT') nextTime();
     const name = fxKeys[e.code];
     if (name) {
       const u = fx.toggles[name];
@@ -105,6 +109,11 @@ async function boot() {
       hud.fx(name, !!u.value);
     }
   });
+  const timeButton = document.getElementById('time');
+  const showTime = (time) => { timeButton.firstElementChild.textContent = time.icon; timeButton.lastElementChild.textContent = time.name; };
+  const nextTime = () => showTime(daylight.next());
+  showTime(daylight.current);
+  timeButton.addEventListener('click', nextTime);
   addEventListener('keyup', (e) => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
   const fit = () => {
@@ -164,6 +173,9 @@ async function boot() {
     plane.animate(dt, input, boostK);
     chase.update(dt, flight, boostK, t);
 
+    const light = daylight.update(dt);
+    if (light.changed) sky.apply(light);
+    detail.update(camera.position);
     landmarks.update(dt);
     life.update(dt, t);
     coast.update(t);
@@ -199,26 +211,8 @@ async function boot() {
     }
   };
 
-  if (import.meta.env.DEV) window.__mel = { dev, flight, airports, coast, life, ground, chase, fx, renderer, scene, camera, city, postcards, stats: { city: city.stats, trees: trees.stats, outskirts: outskirts.stats } };
+  if (import.meta.env.DEV) window.__mel = { dev, flight, daylight, detail, airports, coast, life, ground, chase, fx, renderer, scene, camera, city, postcards, stats: { city: city.stats, trees: trees.stats, outskirts: outskirts.stats } };
 
-  status('warming up the engine…');
-  await nextFrame();
-  // Draw everything once with culling off, so every mesh is uploaded and every shader built before take-off.
-  // Otherwise each new district costs a visible hitch the first time it comes into view.
-  // Phones skip it: drawing the entire city unculled in one frame is more than a mobile GPU should be asked for.
-  const culled = [];
-  if (!LITE) scene.traverse((o) => { if (o.isMesh && o.frustumCulled) { o.frustumCulled = false; culled.push(o); } });
-  if (!LITE) try {
-    flight.apply(plane.root, 0);
-    chase.update(0.016, flight, 0, 0);
-    sky.follow(flight.pos);
-    fx.pipeline.render();
-    await nextFrame();
-  } catch (err) {
-    // The warm-up is an optimisation. If it fails, start anyway and let things load as they appear.
-    console.warn('warm-up skipped', err);
-  }
-  for (const o of culled) o.frustumCulled = true;
   renderer.setAnimationLoop(frame);
   // A hidden tab does no work at all: no simulation, no rendering, no sound.
   document.addEventListener('visibilitychange', () => {

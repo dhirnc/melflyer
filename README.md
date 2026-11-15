@@ -1,6 +1,6 @@
 # Melbourne Flyer
 
-A golden-hour joyride over inner Melbourne in a little floatplane, rendered as a moving gouache painting.
+A dusk joyride over inner Melbourne in a little floatplane, rendered as a moving gouache painting.
 three.js r187 `WebGPURenderer` with SSGI, SSR and TRAA, then a painterly pass.
 
 ```bash
@@ -18,6 +18,7 @@ Open http://localhost:5173 in a WebGPU browser (Chrome, Edge, Safari 26+).
 | `W` / `S` | nose down / nose up (`I` inverts) |
 | `Space` | boost in the air, throttle on the ground |
 | `C` | chase / orbit camera |
+| `T` | time of day: dusk, night, midday, golden hour (also the button top left) |
 | `1` `2` `3` `4` | toggle paint, ink, SSGI, SSR |
 | `M` `H` | sound, hide HUD |
 
@@ -31,7 +32,10 @@ Release everything and she brakes to a stop, which stamps the logbook. Hold `Spa
 lifts the nose. A BOOST button appears bottom right. A mouse drag works the same way.
 
 **Phones.** Touch devices get a lite build automatically: no SSGI, SSR or TRAA, a cheaper brush filter, fewer
-trees and houses, smaller shadows. `?quality=full` or `?quality=lite` overrides the guess.
+trees and houses, smaller shadows redrawn every second frame, and a shorter draw distance for trees and outlying
+houses. `?quality=full` or `?quality=lite` overrides the guess.
+
+**Time of day.** Starts at dusk and remembers the last pick. `?time=golden|dusk|night|noon` sets it for one visit.
 
 **Splash screens.** Three designs ship, brush script (A) by default. Pick with the A / B / C dots on the title screen or `?splash=a|b|c`.
 
@@ -63,8 +67,23 @@ mountain rings on the horizon. The airfields sit just past the map edge rather t
 - `src/world/landmarks.js` holds the hand-modelled landmarks and the postcard list. `airports.js` and `coast.js`
   hold the airfields and the St Kilda kite surfers. `life.js` runs trams, trains,
   balloons, boats, clouds and birds.
+- `src/world/daylight.js` is the table of times of day. Add a row and it joins the cycle. `sky.js` turns the
+  current row into sky, fog, lights and reflections.
+- `src/world/detail.js` swaps distant tree tiles for a cheap stand-in, hides the furthest ones on phones, and
+  feeds unseen meshes to the GPU a few per frame behind the title screen.
 - `src/fx/pipeline.js` is the render graph. `src/fx/painterly.js` is the Kuwahara, ink and paper pass.
 - `src/plane/` holds the plane model, the flight model and the chase camera.
+
+## Deploying
+
+The site is static: `npm run build` writes everything to `dist/`.
+
+- **Cloudflare Pages.** Connect the GitHub repo in the Cloudflare dashboard (Workers & Pages, Create, Pages,
+  Connect to Git) with build command `npm run build` and output directory `dist`. `wrangler.toml`, `.node-version`
+  and `public/_headers` carry the rest. Every push to `main` deploys, and every pull request gets a preview URL.
+  For a one-off deploy from a laptop: `npm run build && npx wrangler pages deploy`.
+- **GitHub Pages.** `.github/workflows/pages.yml` still deploys `main` to `<user>.github.io/melflyer`. Delete it
+  once Cloudflare is live.
 
 ## Credits
 

@@ -1,0 +1,5 @@
+# Cloudflare Pages. The dashboard's Git integration reads this for the output directory;
+# `npx wrangler pages deploy` reads it for a manual deploy.
+name = "melflyer"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-01"
