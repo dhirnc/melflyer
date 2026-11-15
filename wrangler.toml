@@ -1,0 +1,8 @@
+# Cloudflare Workers static assets. The dashboard's Git build runs `npm run build`, then `npx wrangler deploy`,
+# which uploads dist/ as-is. No Worker script: the site is plain files.
+# `name` must match the Worker's name in the Cloudflare dashboard.
+name = "dc-melflyer"
+compatibility_date = "2026-11-01"
+
+[assets]
+directory = "./dist"

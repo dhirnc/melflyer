@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import { Fn, vec3, mix, hash, instanceIndex, positionLocal, normalLocal, time, sin, step, smoothstep, float } from 'three/tsl';
 import { LITE } from '../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { tagDetail } from './detail.js';
 
 const TILE = 1100;
 const MAX_SCATTER = LITE ? 9000 : 12000;
@@ -24,6 +25,21 @@ export function treeGeometry() {
   const merged = mergeGeometries(LITE ? [trunk, blob(1.08, 0, 1.7, 0)] : [trunk, blob(1, 0, 1.75, 0), blob(0.68, 0.55, 1.35, 0.3)]);
   merged.deleteAttribute('uv');
   return merged;
+}
+
+// Stand-in for a tree a kilometre or more away: one eight-sided canopy, no trunk. It sits wholly above
+// y = 1, which the material reads as leaf, and carries the same rounded normals as the full canopy.
+export function farTreeGeometry() {
+  const g = new THREE.OctahedronGeometry(1, 0);
+  const pos = g.attributes.position, nor = g.attributes.normal;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i).normalize();
+    nor.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.scale(1.15, 0.85, 1.15).translate(0, 1.9, 0);
+  g.deleteAttribute('uv');
+  return g;
 }
 
 export function treeMaterial(seed) {
@@ -94,6 +110,7 @@ export function buildTrees(data, heightAt) {
   const group = new THREE.Group();
   group.name = 'trees';
   const geometry = treeGeometry();
+  const farGeometry = farTreeGeometry();
   const material = treeMaterial(7);
   const dummy = new THREE.Object3D();
   let n = 0;
@@ -111,7 +128,7 @@ export function buildTrees(data, heightAt) {
     mesh.computeBoundingSphere();
     mesh.castShadow = !LITE;
     mesh.receiveShadow = true;
-    group.add(mesh);
+    group.add(mesh, tagDetail(mesh, 'trees', farGeometry));
     n++;
   }
   return { group, stats: { mapped, scattered } };
