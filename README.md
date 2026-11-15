@@ -78,12 +78,10 @@ mountain rings on the horizon. The airfields sit just past the map edge rather t
 
 The site is static: `npm run build` writes everything to `dist/`.
 
-- **Cloudflare.** The repo is connected in the Cloudflare dashboard as the Worker `dc-melflyer`, serving static
-  assets. Its Git build runs `npm run build` then `npx wrangler deploy`, and `wrangler.toml` points that at `dist/`.
-  `public/_headers` sets caching. Every push to `main` deploys, and other branches get a preview URL.
-  For a one-off deploy from a laptop: `npm run build && npx wrangler deploy`.
-- **GitHub Pages.** `.github/workflows/pages.yml` still deploys `main` to `<user>.github.io/melflyer`. Delete it
-  once Cloudflare is live.
+The Cloudflare Pages project `dc-melflyer` is connected to this repo and serves https://dc-melflyer.pages.dev.
+It builds with `npm run build` and publishes `dist/`. `wrangler.toml` names the project and the output directory,
+`.node-version` pins Node, and `public/_headers` sets caching. Every push to `main` deploys, and every other
+branch gets a preview URL. For a one-off deploy from a laptop: `npm run build && npx wrangler pages deploy`.
 
 ## Credits
 

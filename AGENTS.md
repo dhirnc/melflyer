@@ -34,11 +34,11 @@ Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`.
   phone cost.** Frame times on a desktop GPU are 1 to 3 ms and vary 3x run to run, so they say nothing about a phone.
   Reference at the start position on lite: about 1.1M triangles and 330 draws (was 2.0M and 430 before tree LOD).
 - Screenshots need the Browser pane visible and the app window uncovered, or they time out.
-- A real phone is the only real test of smoothness. Cloudflare builds a preview URL for every pushed branch.
+- A real phone is the only real test of smoothness. Cloudflare Pages builds a preview URL for every pushed branch.
 
 ## Rules the owner has set
 
-- **Never push to `main` without showing screenshots and getting a yes.** `main` deploys to the public site.
+- **Never push to `main` without showing screenshots and getting a yes.** `main` deploys to the public site at dc-melflyer.pages.dev.
   Work on a branch or worktree and open a pull request.
 - The plane never crashes. No fail states, no timers.
 - Dusk is the default time of day. Midday must not look blown out.
