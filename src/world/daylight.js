@@ -78,7 +78,6 @@ export function createDaylight() {
   for (const k of COLOURS) now[k] = TIMES[index][k].clone();
   for (const k of NUMBERS) now[k] = TIMES[index][k];
   let moving = 0.01; // seconds of transition left; starts above zero so the first frame applies everything
-  let sinceEnv = 0;
 
   const push = () => {
     direction(day.sunDir.value, now.az, now.el);
@@ -96,8 +95,8 @@ export function createDaylight() {
       moving = 2.4;
       return TIMES[index];
     },
-    // Eases toward the chosen hour. refreshEnv asks the caller to rebuild reflections: a few times while the
-    // light is changing and once more when it settles.
+    // Eases toward the chosen hour. refreshEnv asks the caller to rebuild reflections, once, when the light
+    // has settled: each rebuild stalls a frame, so the old reflections ride out the transition.
     update(dt) {
       if (moving <= 0) return { now, changed: false, refreshEnv: false };
       const target = TIMES[index];
@@ -107,10 +106,7 @@ export function createDaylight() {
       for (const key of NUMBERS) now[key] += (target[key] - now[key]) * k;
       now.az += (((target.az - now.az + 540) % 360) - 180) * k;
       push();
-      sinceEnv += dt;
-      const refreshEnv = moving <= 0 || sinceEnv > 0.8;
-      if (refreshEnv) sinceEnv = 0;
-      return { now, changed: true, refreshEnv };
+      return { now, changed: true, refreshEnv: moving <= 0 };
     },
   };
 }

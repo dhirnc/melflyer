@@ -56,7 +56,9 @@
       body.touch #time { top: 26px; }
       #fx i { font-style: normal; opacity: 0.4; }
       #fx i.on { opacity: 1; color: var(--red); }
-      #title { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; background: var(--paper); transition: opacity 1.2s, background 0.4s; z-index: 5; text-align: center; overflow: hidden; }
+      #title { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; background: var(--paper); opacity: 0.996; transition: opacity 1.2s, background 0.4s; z-index: 5; text-align: center; overflow: hidden; }
+      /* Not quite opaque on purpose. Behind a fully opaque title the browser never composites the canvas, and the
+         first time it does costs about 700 ms. This way that happens during loading, not at take-off. */
       #title.gone { opacity: 0; pointer-events: none; }
       .splash { display: none; }
       #title[data-splash='a'] .splash-a, #title[data-splash='b'] .splash-b, #title[data-splash='c'] .splash-c { display: block; }

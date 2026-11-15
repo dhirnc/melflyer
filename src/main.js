@@ -211,7 +211,7 @@ async function boot() {
     }
   };
 
-  if (import.meta.env.DEV) window.__mel = { dev, flight, daylight, detail, airports, coast, life, ground, chase, fx, renderer, scene, camera, city, postcards, stats: { city: city.stats, trees: trees.stats, outskirts: outskirts.stats } };
+  if (import.meta.env.DEV) window.__mel = { dev, flight, daylight, detail, sky, airports, coast, life, ground, chase, fx, renderer, scene, camera, city, postcards, stats: { city: city.stats, trees: trees.stats, outskirts: outskirts.stats } };
 
   renderer.setAnimationLoop(frame);
   // A hidden tab does no work at all: no simulation, no rendering, no sound.

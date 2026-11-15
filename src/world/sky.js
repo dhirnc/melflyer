@@ -64,6 +64,8 @@ export function buildSky(scene, renderer) {
   envMat.colorNode = skyColor(normalize(positionLocal), float(0));
   envScene.add(new THREE.Mesh(new THREE.SphereGeometry(100, 32, 16), envMat));
   const pmrem = new THREE.PMREMGenerator(renderer);
+  // Handing the scene a new environment texture makes every lit material rebuild, about 200 ms on a desktop.
+  // daylight.js therefore asks for this once, when a change of hour has settled.
   let envTarget = null;
   const refreshEnv = () => {
     const next = pmrem.fromScene(envScene, 0.02);
@@ -119,5 +121,5 @@ export function buildSky(scene, renderer) {
     sun.target.updateMatrixWorld();
     sun.shadow.needsUpdate = true;
   };
-  return { sun, follow, apply };
+  return { sun, follow, apply, refreshEnv };
 }

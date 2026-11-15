@@ -53,8 +53,12 @@ Other URL switches: `?time=golden|dusk|night|noon`, `?splash=a|b|c`.
   on the time-of-day feature. Resolution now only steps down, after three slow seconds.
 - **A blocking warm-up.** Drawing the whole city unculled in one frame before take-off hung on "warming up the
   engine" on some machines. `detail.js` now primes four meshes per frame behind the title screen instead.
-- **Rebuilding reflections every frame.** `PMREMGenerator.fromScene` is expensive. `daylight.js` asks for it a few
-  times during a transition and once when it settles. Do not call it from the frame loop.
+- **Swapping the environment texture.** Assigning a different texture to `scene.environment` makes every lit
+  material rebuild, a 200 ms stall on a desktop. Baking it (`PMREMGenerator.fromScene`) is only 2 ms. `daylight.js`
+  asks for one rebuild, when a change of hour has settled. Rendering into the same target in place was tried and
+  throws WebGPU validation errors.
+- **A fully opaque title screen.** Behind one the browser never composites the canvas, and the first time it does
+  costs about 700 ms, which landed on take-off. `#title` sits at opacity 0.996 so that happens during loading.
 - **A flat sun.** Below about 11 degrees the shadow map smears along the ground and pulls far more buildings into
   the shadow pass. `daylight.js` keeps `lightDir` above that while `sunDir` (the painted disc) goes as low as it likes.
 
