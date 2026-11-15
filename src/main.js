@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { FLIGHT, FLIGHT_BOX } from './config.js';
+import { FLIGHT, FLIGHT_BOX, LITE } from './config.js';
 import { buildGround } from './world/ground.js';
 import { buildCity } from './world/buildings.js';
 import { buildLandmarks } from './world/landmarks.js';
@@ -26,7 +26,9 @@ async function boot() {
     if (import.meta.env.DEV) console.info(`[boot ${Math.round(performance.now())}ms] ${t}`);
   };
   const renderer = new THREE.WebGPURenderer({ antialias: false, requiredLimits: { maxColorAttachmentBytesPerSample: 64 } });
-  let ratio = Math.min(devicePixelRatio, innerWidth > 1500 ? 1.25 : 1.5);
+  // Phones start at a modest resolution and are never allowed below it, so a busy moment costs frames, not sharpness.
+  const floor = LITE ? Math.min(devicePixelRatio, 1.25) : 0.85;
+  let ratio = LITE ? floor : Math.min(devicePixelRatio, innerWidth > 1500 ? 1.25 : 1.5);
   renderer.setPixelRatio(ratio);
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -184,11 +186,11 @@ async function boot() {
       frames = 0;
       fpsTimer = 0;
       // Trade resolution for frame rate rather than stutter. The paint filter hides the difference.
-      slow = fps < 40 ? slow + 1 : 0;
+      slow = fps < 34 ? slow + 1 : 0;
       fast = fps > 57 ? fast + 1 : 0;
-      const cap = Math.min(devicePixelRatio, 2);
-      if (slow >= 2 && ratio > 0.6) { ratio = Math.max(0.6, ratio - 0.15); renderer.setPixelRatio(ratio); slow = 0; }
-      if (fast >= 6 && ratio < cap) { ratio = Math.min(cap, ratio + 0.1); renderer.setPixelRatio(ratio); fast = 0; }
+      const cap = Math.min(devicePixelRatio, LITE ? 1.75 : 2);
+      if (slow >= 3 && ratio > floor) { ratio = Math.max(floor, ratio - 0.1); renderer.setPixelRatio(ratio); slow = 0; }
+      if (fast >= 8 && ratio < cap) { ratio = Math.min(cap, ratio + 0.1); renderer.setPixelRatio(ratio); fast = 0; }
     }
     hudTimer += dt;
     if (hudTimer > 0.1) {

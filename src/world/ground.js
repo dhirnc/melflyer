@@ -4,6 +4,8 @@ import {
   cameraPosition, length, max, fract, floor, hash, step,
 } from 'three/tsl';
 
+import { LITE } from '../config.js';
+
 const ROAD_WIDTH = [26, 17, 12, 8, 7];
 const LINES_PX_PER_M = 4096 / 11000;
 const MAX_CANVAS = 8192;
@@ -261,7 +263,7 @@ export function buildGround(data) {
   const wet = water.mul(road.oneMinus());
   const material = new THREE.MeshStandardNodeMaterial();
   material.colorNode = colorNode;
-  material.roughnessNode = mix(float(0.95), float(0.16), wet);
+  material.roughnessNode = mix(float(0.95), float(LITE ? 0.3 : 0.16), wet);
   material.metalnessNode = mix(float(0), float(0.92), wet);
 
   // Small moving ripples so the reflections wobble like wet paint.
@@ -271,7 +273,8 @@ export function buildGround(data) {
     mx_noise_float(vec3(wp.mul(0.11), t)).add(mx_noise_float(vec3(wp.mul(0.031).add(40), t.mul(0.7))).mul(1.6)),
     mx_noise_float(vec3(wp.mul(0.11).add(17), t)).add(mx_noise_float(vec3(wp.mul(0.031).add(90), t.mul(0.7))).mul(1.6))
   ).mul(0.05).mul(rippleFade).mul(wet);
-  material.normalNode = transformNormalToView(normalize(vec3(ripple.x, 1, ripple.y)));
+  // The ripples only show through reflections, which the phone build does not render.
+  if (!LITE) material.normalNode = transformNormalToView(normalize(vec3(ripple.x, 1, ripple.y)));
 
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(90000, 90000, 1, 1).rotateX(-Math.PI / 2), material);
   mesh.receiveShadow = true;

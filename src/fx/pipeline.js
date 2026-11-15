@@ -8,12 +8,24 @@ import { ssr } from 'three/addons/tsl/display/SSRNode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { painterly } from './painterly.js';
+import { LITE } from '../config.js';
 
 export function buildPipeline(renderer, scene, camera) {
   const pipeline = new THREE.RenderPipeline(renderer);
   const toggles = { gi: uniform(1), ssr: uniform(1), paint: uniform(1), ink: uniform(1) };
 
   const scenePass = pass(scene, camera);
+  if (LITE) {
+    // Phone path: one scene pass with normals for the ink, straight into the brush filter.
+    scenePass.setMRT(mrt({ output, normal: packNormalToRGB(normalView) }));
+    scenePass.getTexture('normal').type = THREE.UnsignedByteType;
+    const normals = scenePass.getTextureNode('normal');
+    const liteNormal = sample((uv) => unpackRGBToNormal(normals.sample(uv)));
+    const frame = convertToTexture(renderOutput(scenePass.getTextureNode('output')));
+    pipeline.outputColorTransform = false;
+    pipeline.outputNode = painterly(frame, scenePass.getTextureNode('depth'), liteNormal, camera, toggles, true);
+    return { pipeline, toggles };
+  }
   scenePass.setMRT(mrt({
     output,
     diffuseColor,

@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { Fn, vec3, mix, hash, instanceIndex, positionLocal, positionWorld, normalWorld, step, smoothstep, dot, uniform, mx_noise_float } from 'three/tsl';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SUN_DIR, COLORS, FLIGHT_BOX } from '../config.js';
+import { SUN_DIR, COLORS, FLIGHT_BOX, LITE } from '../config.js';
 import { treeGeometry, treeMaterial } from './trees.js';
 
 const LOT = 26;
@@ -60,7 +60,7 @@ function instanced(geometry, material, spots, makeMatrix) {
       mesh.setMatrixAt(i, d.matrix);
     });
     mesh.computeBoundingSphere();
-    mesh.castShadow = true;
+    mesh.castShadow = !LITE;
     mesh.receiveShadow = true;
     group.add(mesh);
   }
@@ -85,7 +85,7 @@ function houses(bounds, blocked) {
       const out = outside(bounds, x, z);
       const band = z < bounds.minZ ? 2800 : 1500;
       if (out <= 0 || out > band) continue;
-      const chance = 0.62 * (1 - (out / band) * 0.55);
+      const chance = (LITE ? 0.3 : 0.62) * (1 - (out / band) * 0.55);
       const h = cellHash(i, j);
       if (h > chance || blocked(x, z, 70)) continue;
       spots.push({ x, z, r: h / chance });
@@ -106,7 +106,7 @@ function woodland(bounds, blocked) {
   const spots = [];
   const b = FLIGHT_BOX, pad = 2500;
   let guard = 0;
-  while (spots.length < 30000 && guard++ < 400000) {
+  while (spots.length < (LITE ? 11000 : 30000) && guard++ < 400000) {
     const x = b.minX - pad + rand() * (b.maxX - b.minX + pad * 2), z = b.minZ - pad + rand() * (b.maxZ - b.minZ + pad * 2);
     const out = outside(bounds, x, z);
     if (out <= 0) continue;

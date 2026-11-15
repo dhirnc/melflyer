@@ -3,7 +3,7 @@ import {
   Fn, vec3, float, mix, smoothstep, dot, max, pow, normalize, normalWorldGeometry, positionLocal, positionWorld, cameraPosition,
   mx_fractal_noise_float, mx_noise_float, atan, fog, uniform, exp, length,
 } from 'three/tsl';
-import { SUN_DIR, COLORS } from '../config.js';
+import { SUN_DIR, COLORS, LITE } from '../config.js';
 
 const sunDir = uniform(SUN_DIR);
 const v3 = (c) => vec3(c.r, c.g, c.b);
@@ -61,9 +61,10 @@ export function buildSky(scene, renderer) {
 
   const sun = new THREE.DirectionalLight(COLORS.sun, 6.4);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(4096, 4096);
+  const mapSize = LITE ? 2048 : 4096;
+  sun.shadow.mapSize.set(mapSize, mapSize);
   const cam = sun.shadow.camera;
-  const half = 900;
+  const half = LITE ? 620 : 900;
   cam.left = -half; cam.right = half; cam.top = half; cam.bottom = -half;
   cam.near = 100; cam.far = 6000;
   sun.shadow.bias = -0.0004;
@@ -75,7 +76,7 @@ export function buildSky(scene, renderer) {
   scene.add(hemi);
 
   // Keep the shadow box centred ahead of the plane, snapped to texels so it does not crawl.
-  const texel = (half * 2) / 4096;
+  const texel = (half * 2) / mapSize;
   const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), SUN_DIR).normalize();
   const up = new THREE.Vector3().crossVectors(SUN_DIR, right).normalize();
   const focus = new THREE.Vector3();

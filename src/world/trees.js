@@ -1,9 +1,10 @@
 import * as THREE from 'three/webgpu';
 import { Fn, vec3, mix, hash, instanceIndex, positionLocal, normalLocal, time, sin, step, smoothstep, float } from 'three/tsl';
+import { LITE } from '../config.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TILE = 1100;
-const MAX_SCATTER = 12000;
+const MAX_SCATTER = LITE ? 5000 : 12000;
 
 export function treeGeometry() {
   const blob = (r, x, y, z) => {
@@ -54,7 +55,8 @@ function inRing(x, z, r) {
 
 export function buildTrees(data, heightAt) {
   const spots = [];
-  for (let i = 0; i < data.trees.length; i += 2) {
+  const stride = LITE ? 4 : 2; // every second mapped tree on phones
+  for (let i = 0; i < data.trees.length; i += stride) {
     const x = data.trees[i] / 10, z = data.trees[i + 1] / 10;
     if (heightAt(x, z) === 0) spots.push(x, z);
   }
@@ -107,7 +109,7 @@ export function buildTrees(data, heightAt) {
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.computeBoundingSphere();
-    mesh.castShadow = true;
+    mesh.castShadow = !LITE;
     mesh.receiveShadow = true;
     group.add(mesh);
     n++;

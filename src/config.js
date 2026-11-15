@@ -2,6 +2,12 @@ import * as THREE from 'three/webgpu';
 import region from '../region.json';
 
 export const ORIGIN = region.origin;
+
+// Phones get a lighter build: no screen-space GI or reflections, a cheaper brush filter, a thinner world.
+// ?quality=full or ?quality=lite overrides the guess.
+const asked = new URLSearchParams(globalThis.location?.search ?? '').get('quality');
+const phone = globalThis.matchMedia?.('(pointer: coarse)').matches || /Android|iPhone|iPad|Mobile/i.test(globalThis.navigator?.userAgent ?? '');
+export const LITE = asked ? asked === 'lite' : !!phone;
 const MX = Math.cos((ORIGIN.lat * Math.PI) / 180) * 111320;
 const MZ = 110574;
 

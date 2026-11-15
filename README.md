@@ -30,6 +30,9 @@ Release everything and she brakes to a stop, which stamps the logbook. Hold `Spa
 **Touch.** Drag anywhere on the picture and that point becomes a joystick: right banks right, pulling down
 lifts the nose. A BOOST button appears bottom right. A mouse drag works the same way.
 
+**Phones.** Touch devices get a lite build automatically: no SSGI, SSR or TRAA, a cheaper brush filter, fewer
+trees and houses, smaller shadows. `?quality=full` or `?quality=lite` overrides the guess.
+
 **Splash screens.** Three designs ship, boarding pass by default. Pick with the A / B / C dots on the title screen or `?splash=a|b|c`.
 
 ## Growing the map

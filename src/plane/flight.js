@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { FLIGHT, ll } from '../config.js';
+import { FLIGHT, LITE, ll } from '../config.js';
 
 const damp = (k, dt) => 1 - Math.exp(-k * dt);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
@@ -194,7 +194,8 @@ export class ChaseCamera {
     const bank = this.mode === 0 ? flight.roll * 0.42 : 0;
     cam.up.set(0, 1, 0).applyAxisAngle(yawF, -bank);
     cam.lookAt(this.look);
-    this.fov += (56 + boostK * 19 - this.fov) * damp(3, dt);
+    // A wide boost lens pulls far more of the city into view, which phones pay for.
+    this.fov += (56 + boostK * (LITE ? 9 : 19) - this.fov) * damp(3, dt);
     if (Math.abs(cam.fov - this.fov) > 0.01) {
       cam.fov = this.fov;
       cam.updateProjectionMatrix();
